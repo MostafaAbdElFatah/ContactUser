@@ -12,8 +12,8 @@ import CoreData
 class AddItemViewController: UIViewController,ContactSelectionDelegate {
     
     
-    var pickedDate:NSDate = NSDate()
-    var dateid:NSString?  = nil
+    var pickedDate:Date = Date()
+    var dateid:String?
     @IBOutlet weak var firstNameLabel: UITextField!
     @IBOutlet weak var lastNameLabel: UITextField!
     @IBOutlet weak var imageContact: UIImageView!
@@ -25,26 +25,26 @@ class AddItemViewController: UIViewController,ContactSelectionDelegate {
         self.lastNameLabel.text  = "Contact"
     }
 
-    @IBAction func DatePickerVaueChange(sender: UIDatePicker) {
-        self.pickedDate = sender.date
+    @IBAction func DatePickerVaueChange(_ sender: UIDatePicker) {
+        self.pickedDate = sender.date as Date
     }
     
-    func userDidSelectContact(contactDate: NSString) {
+    func userDidSelectContact(contactDate: String) {
         self.dateid = contactDate
-        let appDeleg:AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        let appDeleg:AppDelegate = UIApplication.shared.delegate as! AppDelegate
         let context:NSManagedObjectContext = appDeleg.managedObjectContext
-        let request = NSFetchRequest(entityName: "Contact")
+        let request = NSFetchRequest<NSFetchRequestResult>(entityName: "Contact")
         request.predicate = NSPredicate(format: "dateID == '\(contactDate)'")
         
         do{
-            let results = try context.executeFetchRequest(request)
+            let results = try context.fetch(request) as! [NSManagedObject]
             if results.count > 0 {
-                self.firstNameLabel.text = results[0].valueForKey("firstName") as? String
-                self.lastNameLabel.text  = results[0].valueForKey("lastName") as? String
-                let imageCon  = results[0].valueForKey("image") as! NSData
+                self.firstNameLabel.text = results[0].value(forKey: "firstName") as? String
+                self.lastNameLabel.text  = results[0].value(forKey: "lastName") as? String
+                let imageCon  = results[0].value(forKey: "image") as! Data
                 let imageContact:UIImage = UIImage(data: imageCon)!
                 var imageFrameContact:CGRect = self.imageContact.frame
-                imageFrameContact.size = CGSizeMake(100, 85)
+                imageFrameContact.size = CGSize(width: 100, height: 85)
                 self.imageContact.frame = imageFrameContact
                 self.imageContact.image = imageContact
             }
@@ -55,25 +55,26 @@ class AddItemViewController: UIViewController,ContactSelectionDelegate {
 
     }
     
-    @IBAction func Done_btnClicked(sender: UIBarButtonItem) {
+    @IBAction func Done_btnClicked(_ sender: UIBarButtonItem) {
         if self.firstNameLabel.text == "" || self.lastNameLabel.text == "" || self.notelabel.text == ""{
             
-            let useralter = UIAlertController(title: "Please Fill Whole text Field", message: nil, preferredStyle: UIAlertControllerStyle.Alert)
-            let OkAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil)
+            let useralter = UIAlertController(title: "Please Fill Whole text Field", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+            let OkAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.default, handler: nil)
             useralter.addAction(OkAction)
-            self.presentViewController(useralter, animated:true, completion: nil)
+            self.present(useralter, animated:true, completion: nil)
             
         }else if self.dateid == nil{
             
-            let useralter = UIAlertController(title: "Please Select Contact", message: nil, preferredStyle: UIAlertControllerStyle.Alert)
-            let OkAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil)
+            let useralter = UIAlertController(title: "Please Select Contact", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+            let OkAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.default, handler: nil)
             useralter.addAction(OkAction)
-            self.presentViewController(useralter, animated:true, completion: nil)
+            self.present(useralter, animated:true, completion: nil)
 
         }else{
-            let appDeleg:AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+            let appDeleg:AppDelegate = UIApplication.shared.delegate as! AppDelegate
             let context:NSManagedObjectContext = appDeleg.managedObjectContext
-            let newContact = NSEntityDescription.insertNewObjectForEntityForName("ToDoItem", inManagedObjectContext: context)
+            let entity = NSEntityDescription.entity(forEntityName:  "ToDoItem", in: context)
+            let newContact = NSManagedObject(entity: entity!, insertInto: context)
             newContact.setValue(self.dateid,forKey: "dateID")
             newContact.setValue(self.notelabel.text, forKey: "note")
             newContact.setValue(self.pickedDate, forKey: "dueDate")
@@ -82,17 +83,17 @@ class AddItemViewController: UIViewController,ContactSelectionDelegate {
             }catch{
                 print("error in saving data")
             }
-            self.navigationController?.popViewControllerAnimated(true)
+            self.navigationController?.popViewController(animated: true)
         }
 
     }
     
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "contactSegue"{
-            let viewController:ContactsTableViewController = segue.destinationViewController as! ContactsTableViewController
+            let viewController:ContactsTableViewController = segue.destination as! ContactsTableViewController
             viewController.delegate = self
         }
     }
-    
+  
 }
 

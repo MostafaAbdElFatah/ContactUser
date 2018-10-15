@@ -10,7 +10,7 @@ import UIKit
 import CoreData
 
 protocol ContactSelectionDelegate{
-    func userDidSelectContact(contactDate:NSString)
+    func userDidSelectContact(contactDate:String)
 }
 
 class ContactsTableViewController: UITableViewController{
@@ -23,7 +23,7 @@ class ContactsTableViewController: UITableViewController{
         
     }
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.loadData()
     }
@@ -31,21 +31,21 @@ class ContactsTableViewController: UITableViewController{
     func loadData(){
         
         yourContact.removeAllObjects()
-        let appDeleg:AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        let appDeleg:AppDelegate = UIApplication.shared.delegate as! AppDelegate
         let context:NSManagedObjectContext = appDeleg.managedObjectContext
         
         do{
-            let request = NSFetchRequest(entityName: "Contact")
-            let results = try context.executeFetchRequest(request)
-            for contact in results{
-                let firstname = contact.valueForKey("firstName") as! String
-                let lastname  = contact.valueForKey("lastName") as! String
-                let email  = contact.valueForKey("email") as! String
-                let phone  = contact.valueForKey("phone") as! String
-                let dateCon  = contact.valueForKey("dateID") as! String
-                let imageCon  = contact.valueForKey("image") as! NSData
+            let request = NSFetchRequest<NSFetchRequestResult>(entityName: "Contact")
+            let results = try context.fetch(request)
+            for contact in results as! [NSManagedObject]{
+                let firstname = contact.value(forKey: "firstName") as! String
+                let lastname  = contact.value(forKey: "lastName") as! String
+                let email  = contact.value(forKey: "email") as! String
+                let phone  = contact.value(forKey: "phone") as! String
+                let dateCon  = contact.value(forKey: "dateID") as! String
+                let imageCon  = contact.value(forKey: "image") as! NSData
                 let singleContact:NSDictionary = ["firstName":firstname,"lastName":lastname,"email":email,"phone":phone,"date":dateCon,"image":imageCon]
-                self.yourContact.addObject(singleContact)
+                self.yourContact.add(singleContact)
             }
             self.tableView.reloadData()
         }catch{
@@ -54,55 +54,52 @@ class ContactsTableViewController: UITableViewController{
     }
     
     
-    override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return 1
-    }
-    override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.yourContact.count
     }
-    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell:ContactTableViewCell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath) as! ContactTableViewCell
-        let singleContact:NSDictionary = self.yourContact.objectAtIndex(indexPath.row) as! NSDictionary
-        let firstname = singleContact.objectForKey("firstName") as! String
-        let lastname  = singleContact.objectForKey("lastName")  as! String
-        let email     = singleContact.objectForKey("email")     as! String
-        let phone     = singleContact.objectForKey("phone")     as! String
-        let imageCon  = singleContact.objectForKey("image")     as! NSData
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell:ContactTableViewCell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath as IndexPath) as! ContactTableViewCell
+        let singleContact:NSDictionary = self.yourContact.object(at: indexPath.row) as! NSDictionary
+        let firstname = singleContact.object(forKey: "firstName") as! String
+        let lastname  = singleContact.object(forKey: "lastName")  as! String
+        let email     = singleContact.object(forKey: "email")     as! String
+        let phone     = singleContact.object(forKey: "phone")     as! String
+        let imageCon  = singleContact.object(forKey: "image")     as! Data
         cell.nameContact.text  = firstname + " " + lastname
         cell.phoneContact.text = phone
         cell.emailContact.text = email
         let imageContact:UIImage = UIImage(data: imageCon)!
         var imageFrameContact:CGRect = cell.imageContact.frame
-        imageFrameContact.size = CGSizeMake(100, 90)
+        imageFrameContact.size = CGSize(width: 100, height: 90)
         cell.imageContact.frame = imageFrameContact
         cell.imageContact.image = imageContact
         return cell
     }
     
-    override func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath)  {
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)  {
         if (delegate  != nil){
-            let contactDic:NSDictionary = self.yourContact.objectAtIndex(indexPath.row)
+            let contactDic:NSDictionary = self.yourContact.object(at: indexPath.row)
              as! NSDictionary
-            delegate?.userDidSelectContact(contactDic.objectForKey("date") as! NSString)
-            self.navigationController?.popViewControllerAnimated(true)
+            delegate?.userDidSelectContact(contactDate: contactDic.object(forKey: "date") as! String )
+            self.navigationController?.popViewController(animated: true)
         }else
         {
             print("delegate id nil")
         }
     }
     
-    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-        if editingStyle == .Delete{
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete{
             if self.yourContact.count > 0 {
-                let appDeleg:AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+                let appDeleg:AppDelegate = UIApplication.shared.delegate as! AppDelegate
                 let context:NSManagedObjectContext = appDeleg.managedObjectContext
-                let contactdic:NSDictionary = self.yourContact.objectAtIndex(indexPath.row) as! NSDictionary
-                let dateid:NSString = contactdic.objectForKey("date") as! NSString
-                let request = NSFetchRequest(entityName: "Contact")
+                let contactdic:NSDictionary = self.yourContact.object(at: indexPath.row) as! NSDictionary
+                let dateid:String = contactdic.object(forKey: "date") as! String
+                let request = NSFetchRequest<NSFetchRequestResult>(entityName: "Contact")
                 request.predicate = NSPredicate(format: "dateID == '\(dateid)'")
                 do{
-                    let results = try context.executeFetchRequest(request)
-                    context.deleteObject(results[0] as! NSManagedObject)
+                    let results = try context.fetch(request) as! [NSManagedObject]
+                    context.delete(results[0])
                     try context.save()
                     self.yourContact.removeAllObjects()
                     self.loadData()
@@ -112,6 +109,7 @@ class ContactsTableViewController: UITableViewController{
             }
         }
     }
+    
 
    
 }

@@ -19,68 +19,70 @@ class AddContactViewController: UIViewController , UIImagePickerControllerDelega
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let tapGestureRecognizer:UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: "ChooseImage:")
+        let tapGestureRecognizer:UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(AddContactViewController.ChooseImage(_:)))
         tapGestureRecognizer.numberOfTapsRequired = 1
         self.imageCon.addGestureRecognizer(tapGestureRecognizer)
-        self.imageCon.userInteractionEnabled = true
+        self.imageCon.isUserInteractionEnabled = true
     }
     
-    @IBAction func Done_addContact(sender: UIBarButtonItem) {
+    @IBAction func Done_addContact(_ sender: UIBarButtonItem) {
         if self.firstName.text == "" || self.lastName.text == "" || self.emailCon.text == "" || self.phoneCon.text == ""{
             
-            let useralter = UIAlertController(title: "Please Fill Whole Date", message: nil, preferredStyle: UIAlertControllerStyle.Alert)
-            let OkAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.Default, handler: nil)
+            let useralter = UIAlertController(title: "Please Fill Whole Date", message: nil, preferredStyle: UIAlertControllerStyle.alert)
+            let OkAction = UIAlertAction(title: "Ok", style: UIAlertActionStyle.default, handler: nil)
             useralter.addAction(OkAction)
-            self.presentViewController(useralter, animated:true, completion: nil)
+            self.present(useralter, animated:true, completion: nil)
             
         }else{
-            let appDeleg:AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+            let appDeleg:AppDelegate = UIApplication.shared.delegate as! AppDelegate
             let context:NSManagedObjectContext = appDeleg.managedObjectContext
-            let newContact = NSEntityDescription.insertNewObjectForEntityForName("Contact", inManagedObjectContext: context)
+            let entity = NSEntityDescription.entity(forEntityName: "Contact", in: context)
+            let newContact = NSManagedObject(entity: entity!, insertInto: context)
             newContact.setValue(self.firstName.text,forKey: "firstName")
             newContact.setValue(self.lastName.text, forKey: "lastName")
             newContact.setValue(self.emailCon.text, forKey: "email")
             newContact.setValue(self.phoneCon.text, forKey: "phone")
             newContact.setValue("\(NSDate())", forKey: "dateID")
-            let contactimage:NSData = UIImagePNGRepresentation(self.imageCon.image!)!
+            let contactimage:Data = UIImagePNGRepresentation(self.imageCon.image!)!
             newContact.setValue(contactimage , forKey: "image")
             do{
                 try context.save()
             }catch{
                 print("error in saving data")
             }
-            self.navigationController?.popViewControllerAnimated(true)
+            self.navigationController?.popViewController(animated: true)
         }
     }
     
-    func ChooseImage(recognizer:UITapGestureRecognizer){
+    @objc func ChooseImage(_ recognizer:UITapGestureRecognizer){
         let imagePicker:UIImagePickerController = UIImagePickerController()
         imagePicker.delegate = self
-        imagePicker.sourceType = UIImagePickerControllerSourceType.PhotoLibrary
-        self.presentViewController(imagePicker, animated: true, completion: nil)
+        imagePicker.sourceType = UIImagePickerControllerSourceType.photoLibrary
+        self.present(imagePicker, animated: true, completion: nil)
     }
     
-    func imagePickerController(picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : AnyObject]) {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
         let imageinfo:NSDictionary = info as NSDictionary
-        let pickedImage:UIImage = imageinfo.objectForKey(UIImagePickerControllerOriginalImage) as! UIImage
-        let smallPicture = scaleImageWith(pickedImage, newSize:CGSizeMake(100,100))
+        let pickedImage:UIImage = imageinfo.object(forKey: UIImagePickerControllerOriginalImage) as! UIImage
+        let smallPicture = scaleImageWith(image: pickedImage, newSize:CGSize(width: 100,height: 100))
         var sizeOfImageView:CGRect = self.imageCon.frame
         sizeOfImageView.size = smallPicture.size
         self.imageCon.frame = sizeOfImageView
         self.imageCon.image = smallPicture
-        picker.dismissViewControllerAnimated(true, completion: nil)
+        picker.dismiss(animated: true, completion: nil)
     }
     
     func scaleImageWith(image:UIImage,newSize:CGSize)->UIImage{
         UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
-        image.drawInRect(CGRectMake(0, 0, newSize.width, newSize.height))
-        let newImage:UIImage = UIGraphicsGetImageFromCurrentImageContext()
+        image.draw(in: CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height))
+        let newImage:UIImage = UIGraphicsGetImageFromCurrentImageContext()!
         UIGraphicsEndImageContext()
         return newImage
     }
     
-    func imagePickerControllerDidCancel(picker: UIImagePickerController) {
-        picker.dismissViewControllerAnimated(true, completion: nil)
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true, completion: nil)
     }
     
     
